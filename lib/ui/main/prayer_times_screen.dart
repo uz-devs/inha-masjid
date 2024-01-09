@@ -62,7 +62,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
           onPressed: widget.onBackButtonPressed,
         ),
         title: Text(
-          AppStrings.prayerTimesScreenTitle,
+          AppStrings.prayerTimes,
           style: GoogleFonts.manrope(
             fontSize: AppDimensions.screenTitleFontSize,
             fontWeight: FontWeight.bold,
@@ -77,7 +77,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
             margin: const EdgeInsets.symmetric(horizontal: 40),
             padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 5),
             decoration: BoxDecoration(
-              color: AppColors.cardButtonBackgroundColor,
+              color: AppColors.cardPrimaryButtonColor,
               borderRadius: BorderRadius.circular(50),
             ),
             child: Center(
@@ -121,7 +121,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
                         ),
                         child: StreamBuilder<DocumentSnapshot>(
                           stream: FirebaseFirestore.instance
-                              .doc('/prayertimes/$prayerName')
+                              .doc(FirestorePaths.prayerTimeDoc(prayerName))
                               .snapshots(),
                           builder: (context, snapshot) {
                             if (!snapshot.hasData) {

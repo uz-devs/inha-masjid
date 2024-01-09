@@ -14,12 +14,13 @@ import 'package:inha_masjid/utils/extensions.dart';
 import 'package:inha_masjid/utils/strings.dart';
 
 class AdminPanelScreen extends StatelessWidget {
+  // Constructor
   AdminPanelScreen({super.key});
 
   // Variables
   final _monthlyExpenseController = TextEditingController();
   final _postNewAnnouncementTitleController = TextEditingController();
-  final _postNewAnnouncementContentController = TextEditingController();
+  final _postNewAnnouncementBodyController = TextEditingController();
   final _masjidBankNameController = TextEditingController();
   final _masjidBankNumberController = TextEditingController();
 
@@ -30,45 +31,53 @@ class AdminPanelScreen extends StatelessWidget {
 
   void _onPrayerTimePressed(context, prayerName) async {
     // Open time picker modal view
-    var selectedTime = await showTimePicker(
+    var tod = await showTimePicker(
       initialTime: TimeOfDay.now(),
       context: context,
     );
-    // If user cancels the time picker, return
-    if (selectedTime == null) return;
 
-    // Prayer time in 0:0 ~ 23:59 range
-    print(prayerName);
-    print('${selectedTime.hour}:${selectedTime.minute}');
+    // User cancelled the time picker
+    if (tod == null) {
+      Fluttertoast.showToast(
+        msg: AppStrings.prayerTimeUpdateCanceledMessage,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.CENTER,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+      return;
+    }
 
     // Update prayer time on firestore
-    var prayerTimeDoc =
-        FirebaseFirestore.instance.doc('/prayertimes/$prayerName');
-    try {
-      await prayerTimeDoc.update({
-        'hour': selectedTime.hour,
-        'minute': selectedTime.minute,
-      });
-      Fluttertoast.showToast(
-        msg: 'Prayer time updated',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    } catch (e) {
-      print(e);
-    }
+    var fs = FirebaseFirestore.instance;
+    var prayerTimeDoc = fs.doc(FirestorePaths.prayerTimeDoc(prayerName));
+    await prayerTimeDoc.update({
+      'hour': tod.hour,
+      'minute': tod.minute,
+    });
+
+    // Show success message (after await)
+    Fluttertoast.showToast(
+      msg: AppStrings.prayerTimeUpdatedMessage(prayerName),
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
   }
 
-  void _updateMonthExpenseBtnPressed(context) {
-    // First, check if the text field is not empty
-    if (_monthlyExpenseController.text.isEmpty) {
-      // Show an error message if the amount is not provided
+  void _updateMonthlyRentBtnPressed(context) async {
+    // Try to convert inputted amount to int
+    var newMonthlyRentAmount = int.tryParse(_monthlyExpenseController.text);
+
+    // Couldn't parse to int
+    if (newMonthlyRentAmount == null) {
       Fluttertoast.showToast(
-        msg: 'Please enter the monthly expense amount',
+        msg: AppStrings.rentUpdateFailedMessage,
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
@@ -76,49 +85,38 @@ class AdminPanelScreen extends StatelessWidget {
         textColor: Colors.white,
         fontSize: 16.0,
       );
-      return; // Do not proceed further if the amount is not provided
+      return;
     }
 
-    // birinchi userdan amountni olib firebase ga qo'yish kere
-    var amount = int.parse(_monthlyExpenseController.text);
+    // Update monthly rent amount on firestore
+    var fs = FirebaseFirestore.instance;
+    var doc = fs.doc(FirestorePaths.monthlyRentDoc);
+    await doc.set({"amount": newMonthlyRentAmount});
 
-    // keyin amountni olib firebase ga qo'yish kere
-    var firestore = FirebaseFirestore.instance;
-    firestore.doc("/masjidConfigs/monthlyFee").set({
-      "amount": amount,
-      "currency": "KRW",
-    }).then((_) {
-      // Show success message
-      Fluttertoast.showToast(
-        msg: 'Monthly expense updated successfully',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green, // Change color to indicate success
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
+    // Show success message (after await)
+    Fluttertoast.showToast(
+      msg: AppStrings.rentUpdatedMessage,
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      fontSize: 16.0,
+    );
 
-      // Clear the monthly expense text field
-      _monthlyExpenseController.clear();
-    }).catchError((error) {
-      print("Error updating monthly expense: $error");
-      // Show error message
-      Fluttertoast.showToast(
-        msg: 'Error updating monthly expense',
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.CENTER,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    });
+    // Clear the monthly expense text field
+    _monthlyExpenseController.clear();
   }
 
   void _postNewAnnouncementBtnPresses(content) {
+    // Get announcement details
+    var timestamp = DateTime.now();
+    var title = _postNewAnnouncementTitleController.text;
+    var body = _postNewAnnouncementBodyController.text;
+    var newMonthlyRentAmount = int.tryParse(_monthlyExpenseController.text);
+
     if (_postNewAnnouncementTitleController.text.isEmpty ||
-        _postNewAnnouncementContentController.text.isEmpty) {
+        _postNewAnnouncementBodyController.text.isEmpty) {
       // Show an error message if the amount is not provided
       Fluttertoast.showToast(
         msg: 'Please enter the bank name and number',
@@ -131,14 +129,14 @@ class AdminPanelScreen extends StatelessWidget {
       );
       return; // Do not proceed further if the amount is not provided
     }
-    var firestore = FirebaseFirestore.instance;
+    var fs = FirebaseFirestore.instance;
     var announcementsCollection =
-        firestore.collection("announcementsCollection");
+        fs.collection(FirestorePaths.announcementsCol);
 
     // Your data to be added to the document
     var announcementData = {
       "title": _postNewAnnouncementTitleController.text,
-      "content": _postNewAnnouncementContentController.text,
+      "content": _postNewAnnouncementBodyController.text,
     };
 
     // Add a new document with the server timestamp
@@ -150,14 +148,15 @@ class AdminPanelScreen extends StatelessWidget {
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green, // Change color to indicate success
+        backgroundColor: Colors.green,
+        // Change color to indicate success
         textColor: Colors.white,
         fontSize: 16.0,
       );
 
       // Clear text fields
       _postNewAnnouncementTitleController.clear();
-      _postNewAnnouncementContentController.clear();
+      _postNewAnnouncementBodyController.clear();
     }).catchError((error) {
       print("Error adding document: $error");
       // Show error message
@@ -204,7 +203,8 @@ class AdminPanelScreen extends StatelessWidget {
         toastLength: Toast.LENGTH_SHORT,
         gravity: ToastGravity.CENTER,
         timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green, // Change color to indicate success
+        backgroundColor: Colors.green,
+        // Change color to indicate success
         textColor: Colors.white,
         fontSize: 16.0,
       );
@@ -237,7 +237,7 @@ class AdminPanelScreen extends StatelessWidget {
           onPressed: () => _onBackPressed(context),
         ),
         title: Text(
-          AppStrings.adminPanelScreenAppBarTitle,
+          AppStrings.inhaMasjidAdmin,
           style: GoogleFonts.manrope(
             fontSize: AppDimensions.screenTitleFontSize,
             fontWeight: FontWeight.bold,
@@ -252,7 +252,7 @@ class AdminPanelScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
-                AppStrings.adminPanelUpdateMonthlyText,
+                AppStrings.updateMonthlyExpenseAmount,
                 style: GoogleFonts.manrope(
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -268,9 +268,10 @@ class AdminPanelScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(22.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Monthly expense amount text field
-                    TextField(
+                    const Text(AppStrings.amount),
+                    TextFormField(
                       inputFormatters: <TextInputFormatter>[
                         // for below version 2 use this
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
@@ -280,8 +281,10 @@ class AdminPanelScreen extends StatelessWidget {
                       keyboardType: TextInputType.number,
                       controller: _monthlyExpenseController,
                       decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: 'Enter total amount',
+                        labelText: AppStrings.amountTooltip,
+                        labelStyle: TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -290,13 +293,13 @@ class AdminPanelScreen extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColors.cardButtonBackgroundColor,
+                        color: AppColors.cardPrimaryButtonColor,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextButton(
-                        onPressed: () => _updateMonthExpenseBtnPressed(context),
+                        onPressed: () => _updateMonthlyRentBtnPressed(context),
                         child: Text(
-                          AppStrings.adminPanelButtonText,
+                          AppStrings.update.toUpperCase(),
                           style: GoogleFonts.manrope(
                             textStyle: const TextStyle(
                               color: AppColors.white,
@@ -316,7 +319,7 @@ class AdminPanelScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
-                AppStrings.adminPanelUpdatePrayerTimesText,
+                AppStrings.updatePrayerTimes,
                 style: GoogleFonts.manrope(
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -356,25 +359,23 @@ class AdminPanelScreen extends StatelessWidget {
                                 // Prayer time button
                                 StreamBuilder<DocumentSnapshot>(
                                   stream: FirebaseFirestore.instance
-                                      .doc('/prayertimes/$prayerName')
+                                      .doc(FirestorePaths.prayerTimeDoc(
+                                          prayerName))
                                       .snapshots(),
                                   builder: (context, snapshot) {
                                     if (!snapshot.hasData) {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
+                                      return const CircularProgressIndicator();
                                     }
 
-                                    var fajrTime = snapshot.data!;
-                                    var hour = fajrTime['hour']
-                                        .toString()
-                                        .padLeft(2, '0');
-                                    var minute = fajrTime['minute']
+                                    // Get prayer time from firestore
+                                    var doc = snapshot.data!;
+                                    var hour =
+                                        doc['hour'].toString().padLeft(2, '0');
+                                    var minute = doc['minute']
                                         .toString()
                                         .padLeft(2, '0');
 
-                                    // Widget with prayer time, when clicked opens a time picker
-                                    // (modal view) to adjust the prayer time.
+                                    // Widget with prayer time, when clicked opens a time picker (modal view) to adjust the prayer time.
                                     return SizedBox(
                                       width: 140,
                                       child: TextButton(
@@ -421,7 +422,7 @@ class AdminPanelScreen extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
-                AppStrings.adminPanelUpdatePostText,
+                AppStrings.postNewAnnouncement,
                 style: GoogleFonts.manrope(
                   textStyle: const TextStyle(
                     fontWeight: FontWeight.bold,
@@ -430,6 +431,7 @@ class AdminPanelScreen extends StatelessWidget {
                 ),
               ),
             ),
+
             // Announcement post text content widget
             Card(
               color: AppColors.cardBackgroundColor,
@@ -438,35 +440,52 @@ class AdminPanelScreen extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // TODO come back here
+
+                    // Announcement title text field (editable)
+                    const Text(AppStrings.announcementTitle),
                     TextFormField(
                       controller: _postNewAnnouncementTitleController,
                       decoration: const InputDecoration(
-                        labelText: 'Title',
-                        contentPadding: EdgeInsets.only(bottom: 0),
+                        labelText: AppStrings.announcementTitleTooltip,
+                        labelStyle: TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // Announcement body text field (editable)
+                    const Text(AppStrings.announcementBody),
                     TextFormField(
-                      controller: _postNewAnnouncementContentController,
+                      keyboardType: TextInputType.multiline,
+                      maxLines: 5,
+                      controller: _postNewAnnouncementBodyController,
                       decoration: const InputDecoration(
-                        labelText: 'Content',
+                        labelText: AppStrings.announcementBodyTooltip,
+                        labelStyle: TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                         contentPadding: EdgeInsets.only(bottom: 0),
                       ),
                     ),
                     const SizedBox(height: 16),
+
                     Container(
                       margin: const EdgeInsets.only(top: 10),
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColors.cardButtonBackgroundColor,
+                        color: AppColors.cardPrimaryButtonColor,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextButton(
                         onPressed: () =>
                             _postNewAnnouncementBtnPresses(context),
                         child: Text(
-                          AppStrings.adminPanelUpdatePostButtonText,
+                          AppStrings.adminPanelUpdatePostButtonText
+                              .toUpperCase(),
                           style: GoogleFonts.manrope(
                             textStyle: const TextStyle(
                               color: AppColors.white,
@@ -481,7 +500,8 @@ class AdminPanelScreen extends StatelessWidget {
                 ),
               ),
             ),
-            // Masjid Bank Account Updatte post card title
+
+            // Masjid Bank Account Update post card title
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Text(
@@ -501,19 +521,28 @@ class AdminPanelScreen extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const Text(AppStrings.bankName),
                     TextFormField(
                       controller: _masjidBankNameController,
                       decoration: const InputDecoration(
-                        labelText: 'Bank Name',
+                        labelText: AppStrings.bankNameTooltip,
+                        labelStyle: TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                         contentPadding: EdgeInsets.only(bottom: 0),
                       ),
                     ),
                     const SizedBox(height: 16),
+                    const Text(AppStrings.bankNumber),
                     TextFormField(
                       controller: _masjidBankNumberController,
                       decoration: const InputDecoration(
-                        labelText: 'Bank number',
+                        labelText: AppStrings.bankNumberTooltip,
+                        labelStyle: TextStyle(
+                          color: AppColors.textSecondary,
+                        ),
                         contentPadding: EdgeInsets.only(bottom: 0),
                       ),
                     ),
@@ -522,7 +551,7 @@ class AdminPanelScreen extends StatelessWidget {
                       margin: const EdgeInsets.only(top: 10),
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: AppColors.cardButtonBackgroundColor,
+                        color: AppColors.cardPrimaryButtonColor,
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextButton(

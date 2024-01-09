@@ -37,7 +37,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         centerTitle: false,
         leading: BackButton(onPressed: widget.onBackButtonPressed),
         title: Text(
-          AppStrings.announcementsScreenTitle,
+          AppStrings.announcements,
           style: GoogleFonts.manrope(
             fontSize: AppDimensions.screenTitleFontSize,
             fontWeight: FontWeight.bold,
@@ -48,7 +48,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
         margin: const EdgeInsets.all(16),
         child: StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
-              .collection("/announcementsCollection")
+              .collection(FirestorePaths.announcementsCol)
               .snapshots(),
           builder:
               (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -68,8 +68,9 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
               itemCount: snapshot.data!.docs.length,
               itemBuilder: (context, index) {
                 var doc = snapshot.data!.docs[index];
+                var timestamp = doc['timestamp'];
                 var title = doc['title'];
-                var content = doc['content'];
+                var body = doc['body'];
 
                 return Card(
                   color: AppColors.cardBackgroundColor,
@@ -83,7 +84,7 @@ class _AnnouncementsScreenState extends State<AnnouncementsScreen> {
                         Padding(
                           padding: const EdgeInsets.only(
                               top: 0, left: 15, right: 15, bottom: 15),
-                          child: Text('$content'),
+                          child: Text(body),
                         ),
                       ],
                     ),

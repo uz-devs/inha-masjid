@@ -4,6 +4,9 @@
 // in the entire app screens. This is also useful for adopting localization in
 // the future (https://docs.flutter.dev/ui/accessibility-and-internationalization/internationalization).
 
+// Stdlib
+import 'package:inha_masjid/utils/extensions.dart';
+
 /// Class for streamlining the UI strings used in the app (for consistency and
 /// easier localization in the future).
 class AppStrings {
@@ -12,48 +15,94 @@ class AppStrings {
 
   // General strings
   static const String appTitle = 'Inha Masjid';
+  static const String inhaMasjidAdmin = 'Inha Masjid Admin';
 
   // Home screen strings
-  static const String homeScreenTitle = 'Home screen';
-  static const String homeScreenCardQuestion = 'Are you masjid administrator?';
-  static final String homeScreenCardTextButton =
-      'Go to admin page'.toUpperCase();
-  static const String homeScreenRequiredAvarageAmount =
-      'Required average amount';
-  static const String homeScreenTotalAmount = '2.000.000 ₩';
-  static const String homeScreenCollectedAmountText = 'Collected amount';
-  static const String homeScreenCollectedAmount = '700.000 ₩';
-  static final String homeScreenRecordDonation =
-      'Record my donation'.toUpperCase();
-  static const String homeScreenRecentPaymentsTitleText = 'Recent Payments';
+  static const String home = 'Home';
+  static const String areYouAdmin = 'Are you masjid administrator?';
+  static const String goToAdmin = 'Go to admin page';
+  static const String goal = 'Goal';
+  static const String donate = 'Donate';
+  static const String activityFeed = 'Activity feed';
+  static const String currentProgress = 'Current progress';
+  static const String noDonations =
+      'No donations yet. Make the difference by making a donation now!';
+  static const String rentUpdatedMessage =
+      'Monthly rent amount updated successfully';
+  static const String rentUpdateFailedMessage =
+      'Monthly rent amount must be a number (e.g., 1000000)';
+  static const String prayerTimeUpdateCanceledMessage =
+      'Prayer time update canceled';
+
+  static String prayerTimeUpdatedMessage(String prayerName) =>
+      '$prayerName prayer time  updated successfully';
+
+  static String raisedAmount(int amount, {bool addCurrency = false}) {
+    var ans = 'raised ${amount.commaSeparated()}';
+
+    if (addCurrency) {
+      ans += ' ₩';
+    }
+
+    return ans; // e.g., "Raised amount: 12,345"
+  }
+
+  static String requiredAmount(int amount, {bool addCurrency = false}) {
+    var ans = 'out of ';
+
+    if (amount >= 1000000) {
+      ans += '${amount ~/ 1000000}M'; // e.g., "1.2M"
+    } else if (amount >= 1000) {
+      ans += '${amount ~/ 1000}K'; // e.g., "1.2K"
+    } else {
+      ans += amount.commaSeparated(); // e.g., "1,234"
+    }
+
+    if (addCurrency) {
+      ans += ' ₩';
+    }
+
+    return ans; // e.g., "out of 1.2m ₩"
+  }
+
+  static String donationForMonth(int month, int year) {
+    return "For Inha Masjid's monthly rent for $month, $year.";
+  }
 
   // Prayer times screen strings
-  static const String prayerTimesScreenTitle = 'Prayer times';
-  static const String announcementsScreenTitle = 'Announcements';
+  static const String prayerTimes = 'Prayer times';
+  static const String announcements = 'Announcements';
 
   // Admin login screen
-  static const String adminLoginScreenTitle = 'Inha Masjid Admin';
-  static const String adminLoginTitle = 'Great to have you back! Login';
-  static const String adminEmailHintText = 'Email';
-  static const String adminPasswordHintText = 'Password';
-  static final String adminLoginButtonText = 'Login'.toUpperCase();
+  static const String loginPrompt = 'Great to have you back! Login';
+  static const String email = 'Email';
+  static const String password = 'Password';
+  static const String login = 'Login';
+  static const String announcementTitle = 'Title';
+  static const String announcementTitleTooltip =
+      'e.g., Taraweeh prayer tonight at 8:30pm';
+  static const String announcementBody = 'Body';
+  static const String announcementBodyTooltip =
+      'e.g., Dear brothers, we will be having Taraweeh prayer tonight at 8:30pm. Please join us.';
 
   // Admin panel screen
-  static const String adminPanelScreenAppBarTitle = 'Inha Masjid Admin';
-  static const String adminPanelUpdateMonthlyText =
+  static const String updateMonthlyExpenseAmount =
       'Update Masjid’s monthly expenses';
-  static const String adminPanelUpdatePrayerTimesText = 'Update prayer times';
-  static const String adminPanelUpdateMonthlyExpenseAmount = '2.000.000 ₩';
-  static const String adminPanelUpdateMonthlyExpenseWonText = '₩';
-  static final String adminPanelButtonText = 'Update'.toUpperCase();
-  static const String adminPanelUpdatePostText = 'Post new announcement';
-  static final String adminPanelUpdatePostButtonText = 'Post'.toUpperCase();
-  static final String adminPanelUpdateExitButtonText = 'Exit'.toUpperCase();
+  static const String updatePrayerTimes = 'Update prayer times';
+  static const String update = 'Update';
+  static const String postNewAnnouncement = 'Post new announcement';
+  static const String adminPanelUpdatePostButtonText = 'Post';
+  static const String amount = 'Amount';
+  static const String amountTooltip = 'e.g., 1000000';
+  static const String bankName = 'Bank name';
+  static const String bankNameTooltip = 'e.g., Hana';
+  static const String bankNumber = 'Bank number';
+  static const String bankNumberTooltip = 'e.g., 748123123123123';
 
   // Record donation screen
-  static const String masjidBankAccountTitle = 'Record My Donation';
-  static const String masjidBankAccountText = 'Masjid bank account';
-  static const String masjidBankAccountDonationDetails = 'Donation details';
+  static const String recordMyDonation = 'Record my donation';
+  static const String bankAccountNumber = 'Masjid bank account';
+  static const String donationDetails = 'Donation details';
   static const String donationDetailsAmount = '0 ₩';
   static const String donatedAmountOne = '10.000 ₩';
   static const String donatedAmountTwo = '20.000 ₩';
@@ -126,4 +175,16 @@ class AppStrings {
     'maghrib',
     'isha',
   ];
+}
+
+class FirestorePaths {
+  // Documents
+  static const String bankAccountDoc = '/masjidConfigs/bankAccount';
+  static const String monthlyRentDoc = '/masjidConfigs/monthlyRent';
+
+  static String prayerTimeDoc(String prayerName) => '/prayerTimes/$prayerName';
+
+  // Collections
+  static const String announcementsCol = '/announcements';
+  static const String donationsCol = '/donations';
 }

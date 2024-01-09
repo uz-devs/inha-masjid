@@ -47,13 +47,13 @@ class _MainRouterWidgetState extends State<MainRouterWidget> {
 
     // Initialize tabs
     _tabs = <Widget>[
-      // Prayer times screen (left tab)
+      // // Prayer times screen (left tab)
       PrayerTimesScreen(onBackButtonPressed: _onBackButtonPressed),
 
       // Home screen (center tab)
       HomeScreen(onBackButtonPressed: _onBackButtonPressed),
 
-      // Announcements screen (right tab)
+      // // Announcements screen (right tab)
       AnnouncementsScreen(onBackButtonPressed: _onBackButtonPressed),
     ];
 

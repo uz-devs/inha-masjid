@@ -1,5 +1,6 @@
 // Stdlib
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:inha_masjid/ui/main/main_router.dart';
 
 // 3rd party
@@ -18,6 +19,11 @@ import 'package:inha_masjid/utils/strings.dart';
 void main() async {
   // Ensure that all widgets are initialized
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Force portrait orientation
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
 
   // Initialize Firebase
   await initFirebase();
